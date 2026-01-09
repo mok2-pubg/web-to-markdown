@@ -60,14 +60,42 @@ convertBtn.addEventListener('click', async () => {
   resultDiv.classList.remove('show');
 
   try {
-    // background.js에 메시지 전송
-    const response = await chrome.runtime.sendMessage({
-      action: 'convertToMarkdown',
-      url: url,
-      savePath: savePath,
-      fileName: fileName,
-      autoDownload: autoDownload
-    });
+    // 현재 탭 확인
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    let response;
+
+    // 현재 탭의 URL과 일치하면 content script 사용
+    if (tab && tab.url === url) {
+      showStatus('현재 페이지에서 콘텐츠 추출 중...', 'info');
+
+      // content script에서 페이지 데이터 추출
+      const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+        action: 'extractPageData'
+      });
+
+      if (!contentResponse.success) {
+        throw new Error(contentResponse.error || '페이지 데이터 추출 실패');
+      }
+
+      // background.js에 변환 요청
+      response = await chrome.runtime.sendMessage({
+        action: 'convertFromContent',
+        pageData: contentResponse.data,
+        savePath: savePath,
+        fileName: fileName,
+        autoDownload: autoDownload
+      });
+    } else {
+      // 외부 URL은 background.js에서 fetch
+      showStatus('외부 URL 페이지 가져오는 중...', 'info');
+      response = await chrome.runtime.sendMessage({
+        action: 'convertToMarkdown',
+        url: url,
+        savePath: savePath,
+        fileName: fileName,
+        autoDownload: autoDownload
+      });
+    }
 
     if (response.success) {
       showStatus('변환 완료!', 'success');
