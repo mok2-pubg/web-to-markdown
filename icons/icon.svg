@@ -1,0 +1,12 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="128" height="128" rx="20" fill="#0052CC"/>
+
+  <!-- Document icon -->
+  <path d="M36 28 h48 v8 h-48 z M36 44 h48 v8 h-48 z M36 60 h32 v8 h-32 z M36 76 h40 v8 h-40 z"
+        fill="white" opacity="0.9"/>
+
+  <!-- Markdown "M" symbol -->
+  <text x="64" y="108" font-family="Arial, sans-serif" font-size="32" font-weight="bold"
+        fill="white" text-anchor="middle">MD</text>
+</svg>
