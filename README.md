@@ -41,7 +41,7 @@
 
 1. Chrome 툴바에서 확장프로그램 아이콘을 클릭합니다
 2. 웹 페이지 URL을 입력하거나 "현재 탭 URL 가져오기" 버튼을 클릭합니다
-3. 저장 경로를 설정합니다 (예: `C:/Users/mok2/web-docs/`)
+3. 저장 경로를 설정합니다 (예: `C:/Users/username/web-docs/`)
    - **한 번 설정한 경로는 자동으로 기억되어 다음에도 사용됩니다**
 4. (선택사항) 파일명을 지정합니다 (비워두면 페이지 제목 사용)
 5. "Markdown으로 변환 및 저장" 버튼을 클릭합니다
@@ -51,8 +51,8 @@
 AI 에이전트가 문서를 참조할 수 있도록 특정 경로에 저장하는 것을 권장합니다:
 
 ```
-C:/Users/mok2/.claude/web-docs/
-C:/Users/mok2/Documents/agent-knowledge/
+C:/Users/username/.claude/web-docs/
+C:/Users/username/Documents/agent-knowledge/
 ```
 
 저장 경로와 자동 다운로드 설정은 Chrome Storage에 저장되므로 한 번 설정하면 변경하기 전까지 계속 기본값으로 사용됩니다.
