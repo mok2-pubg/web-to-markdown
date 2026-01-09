@@ -1,12 +1,12 @@
-# Confluence to Markdown Chrome Extension
+# Web to Markdown Chrome Extension
 
-Confluence 페이지를 Markdown 형식으로 변환하고 로컬에 저장하는 크롬 확장프로그램입니다. AI 에이전트가 참조할 수 있는 문서를 쉽게 생성할 수 있습니다.
+모든 웹 페이지를 Markdown 형식으로 변환하고 로컬에 저장하는 크롬 확장프로그램입니다. AI 에이전트가 참조할 수 있는 문서를 쉽게 생성할 수 있습니다.
 
 ## 주요 기능
 
-- Confluence 페이지 URL을 입력하여 Markdown으로 변환
+- 모든 웹 페이지 URL을 입력하여 Markdown으로 변환
 - 현재 탭의 URL을 자동으로 가져오기
-- 사용자 지정 저장 경로 설정
+- 사용자 지정 저장 경로 설정 및 자동 기억
 - 자동 파일 다운로드
 - HTML 요소를 Markdown 형식으로 변환:
   - 제목 (H1-H6)
@@ -33,15 +33,16 @@ Confluence 페이지를 Markdown 형식으로 변환하고 로컬에 저장하�
 2. 주소창에 `chrome://extensions/` 를 입력합니다
 3. 오른쪽 상단의 "개발자 모드"를 활성화합니다
 4. "압축해제된 확장 프로그램을 로드합니다" 버튼을 클릭합니다
-5. `confluence-to-md-extension` 폴더를 선택합니다
+5. `web-to-markdown` 폴더를 선택합니다
 
 ## 사용 방법
 
 ### 기본 사용법
 
 1. Chrome 툴바에서 확장프로그램 아이콘을 클릭합니다
-2. Confluence 페이지 URL을 입력하거나 "현재 탭 URL 가져오기" 버튼을 클릭합니다
-3. 저장 경로를 설정합니다 (예: `C:/Users/mok2/confluence-docs/`)
+2. 웹 페이지 URL을 입력하거나 "현재 탭 URL 가져오기" 버튼을 클릭합니다
+3. 저장 경로를 설정합니다 (예: `C:/Users/mok2/web-docs/`)
+   - **한 번 설정한 경로는 자동으로 기억되어 다음에도 사용됩니다**
 4. (선택사항) 파일명을 지정합니다 (비워두면 페이지 제목 사용)
 5. "Markdown으로 변환 및 저장" 버튼을 클릭합니다
 
@@ -50,16 +51,27 @@ Confluence 페이지를 Markdown 형식으로 변환하고 로컬에 저장하�
 AI 에이전트가 문서를 참조할 수 있도록 특정 경로에 저장하는 것을 권장합니다:
 
 ```
-C:/Users/mok2/.claude/confluence-docs/
+C:/Users/mok2/.claude/web-docs/
 C:/Users/mok2/Documents/agent-knowledge/
 ```
 
-저장 경로는 확장프로그램에 자동으로 저장되므로 한 번 설정하면 계속 사용됩니다.
+저장 경로와 자동 다운로드 설정은 Chrome Storage에 저장되므로 한 번 설정하면 변경하기 전까지 계속 기본값으로 사용됩니다.
+
+## 지원하는 웹 페이지
+
+이 확장프로그램은 모든 웹 페이지에서 작동합니다:
+
+- **Confluence**: Cloud/Server 모든 버전
+- **Notion**: 공개 페이지
+- **Medium, Blog**: 대부분의 블로그 플랫폼
+- **GitHub**: Wiki, README 등
+- **Stack Overflow**: 질문/답변 페이지
+- 그 외 모든 HTML 웹 페이지
 
 ## 프로젝트 구조
 
 ```
-confluence-to-md-extension/
+web-to-markdown/
 ├── manifest.json           # 확장프로그램 설정
 ├── popup.html             # 팝업 UI
 ├── popup.css              # 팝업 스타일
@@ -85,26 +97,21 @@ confluence-to-md-extension/
 - Chrome Storage API
 - Chrome Downloads API
 
-## 지원하는 Confluence URL 형식
-
-- Confluence Cloud: `https://domain.atlassian.net/wiki/spaces/SPACE/pages/123456/Page+Title`
-- Confluence Server: `https://domain.com/display/SPACE/Page+Title`
-- Direct Page ID: `https://domain.com/pages/viewpage.action?pageId=123456`
-
 ## 알려진 제한사항
 
-1. **인증 필요**: Confluence에 로그인되어 있어야 합니다
+1. **인증 필요**: 로그인이 필요한 페이지는 해당 사이트에 로그인되어 있어야 합니다
 2. **권한 필요**: 페이지를 볼 수 있는 권한이 있어야 합니다
-3. **복잡한 매크로**: 일부 Confluence 매크로는 완벽하게 변환되지 않을 수 있습니다
+3. **동적 콘텐츠**: JavaScript로 동적 로드되는 일부 콘텐츠는 변환되지 않을 수 있습니다
 4. **첨부파일**: 첨부된 파일은 링크로만 포함됩니다
 
 ## 트러블슈팅
 
 ### "페이지를 가져오는데 실패했습니다" 오류
 
-- Confluence에 로그인되어 있는지 확인하세요
+- 해당 사이트에 로그인되어 있는지 확인하세요
 - 페이지에 대한 읽기 권한이 있는지 확인하세요
 - URL이 올바른지 확인하세요
+- CORS 정책으로 인해 일부 사이트는 접근이 제한될 수 있습니다
 
 ### 아이콘이 표시되지 않음
 
@@ -129,18 +136,18 @@ confluence-to-md-extension/
 확장프로그램은 각 단계에서 콘솔에 로그를 출력합니다:
 
 ```javascript
-console.log('Confluence page detected');
+console.log('Page detected');
 console.error('Conversion error:', error);
 ```
 
 ## 향후 개선 계획
 
-- [ ] Confluence API 직접 사용 (더 안정적인 데이터 추출)
 - [ ] 배치 변환 (여러 페이지 동시 변환)
 - [ ] 첨부파일 다운로드 지원
 - [ ] 변환 옵션 설정 (이미지 포함/제외 등)
 - [ ] 페이지 계층 구조 유지
 - [ ] 자동 동기화 기능
+- [ ] 북마크 폴더 전체 변환
 
 ## 라이센스
 

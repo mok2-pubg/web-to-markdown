@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Confluence to Markdown",
+  "name": "Web to Markdown",
   "version": "1.0.0",
-  "description": "Convert Confluence pages to Markdown and save them locally",
+  "description": "Convert any web page to Markdown and save it locally for AI agent reference",
   "permissions": [
     "activeTab",
     "storage",

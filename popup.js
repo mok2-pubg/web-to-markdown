@@ -41,7 +41,7 @@ convertBtn.addEventListener('click', async () => {
 
   // 유효성 검사
   if (!url) {
-    showStatus('Confluence URL을 입력해주세요', 'error');
+    showStatus('Web Page URL을 입력해주세요', 'error');
     return;
   }
 
