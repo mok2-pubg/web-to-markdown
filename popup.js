@@ -64,30 +64,43 @@ convertBtn.addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     let response;
 
-    // 현재 탭의 URL과 일치하면 content script 사용
+    // 현재 탭의 URL과 일치하면 content script 사용 시도
     if (tab && tab.url === url) {
-      showStatus('현재 페이지에서 콘텐츠 추출 중...', 'info');
+      try {
+        showStatus('현재 페이지에서 콘텐츠 추출 중...', 'info');
 
-      // content script에서 페이지 데이터 추출
-      const contentResponse = await chrome.tabs.sendMessage(tab.id, {
-        action: 'extractPageData'
-      });
+        // content script에서 페이지 데이터 추출 시도
+        const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+          action: 'extractPageData'
+        });
 
-      if (!contentResponse.success) {
-        throw new Error(contentResponse.error || '페이지 데이터 추출 실패');
+        if (contentResponse && contentResponse.success) {
+          // background.js에 변환 요청
+          response = await chrome.runtime.sendMessage({
+            action: 'convertFromContent',
+            pageData: contentResponse.data,
+            savePath: savePath,
+            fileName: fileName,
+            autoDownload: autoDownload
+          });
+        } else {
+          throw new Error('Content script 응답 없음');
+        }
+      } catch (contentError) {
+        // Content script 실패 시 fallback으로 fetch 사용
+        console.log('Content script 사용 실패, fetch로 fallback:', contentError);
+        showStatus('페이지 가져오는 중... (fallback)', 'info');
+        response = await chrome.runtime.sendMessage({
+          action: 'convertToMarkdown',
+          url: url,
+          savePath: savePath,
+          fileName: fileName,
+          autoDownload: autoDownload
+        });
       }
-
-      // background.js에 변환 요청
-      response = await chrome.runtime.sendMessage({
-        action: 'convertFromContent',
-        pageData: contentResponse.data,
-        savePath: savePath,
-        fileName: fileName,
-        autoDownload: autoDownload
-      });
     } else {
       // 외부 URL은 background.js에서 fetch
-      showStatus('외부 URL 페이지 가져오는 중...', 'info');
+      showStatus('페이지 가져오는 중...', 'info');
       response = await chrome.runtime.sendMessage({
         action: 'convertToMarkdown',
         url: url,
@@ -103,9 +116,18 @@ convertBtn.addEventListener('click', async () => {
       resultDiv.classList.add('show');
 
       // 다운로드 처리
-      if (autoDownload && response.downloadUrl) {
+      if (autoDownload && response.markdown) {
         showStatus('파일 다운로드 중...', 'info');
-        await downloadFile(response.downloadUrl, response.fileName);
+
+        // Blob 생성 및 다운로드
+        const blob = new Blob([response.markdown], { type: 'text/markdown' });
+        const downloadUrl = URL.createObjectURL(blob);
+
+        await downloadFile(downloadUrl, response.fileName);
+
+        // Blob URL 해제
+        URL.revokeObjectURL(downloadUrl);
+
         showStatus('파일이 다운로드되었습니다!', 'success');
       }
     } else {

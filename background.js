@@ -28,20 +28,15 @@ async function handleContentScriptConversion({ pageData, savePath, fileName, aut
       ? savePath + finalFileName
       : savePath + '/' + finalFileName;
 
-    // 4. Markdown 파일 생성
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const downloadUrl = URL.createObjectURL(blob);
-
-    // 5. 미리보기 생성 (처음 500자)
+    // 4. 미리보기 생성 (처음 500자)
     const preview = markdown.substring(0, 500) + (markdown.length > 500 ? '...' : '');
 
     return {
       success: true,
       fileName: finalFileName,
       savePath: fullPath,
-      downloadUrl: downloadUrl,
-      preview: preview,
-      fullContent: markdown
+      markdown: markdown,
+      preview: preview
     };
   } catch (error) {
     console.error('Conversion error:', error);
@@ -49,7 +44,7 @@ async function handleContentScriptConversion({ pageData, savePath, fileName, aut
   }
 }
 
-// 외부 URL 페이지를 Markdown으로 변환 (deprecated - content script 사용 권장)
+// 외부 URL 페이지를 Markdown으로 변환
 async function handleConversion({ url, savePath, fileName, autoDownload }) {
   try {
     // 1. 페이지 가져오기
@@ -66,20 +61,15 @@ async function handleConversion({ url, savePath, fileName, autoDownload }) {
       ? savePath + finalFileName
       : savePath + '/' + finalFileName;
 
-    // 5. Markdown 파일 생성
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const downloadUrl = URL.createObjectURL(blob);
-
-    // 6. 미리보기 생성 (처음 500자)
+    // 5. 미리보기 생성 (처음 500자)
     const preview = markdown.substring(0, 500) + (markdown.length > 500 ? '...' : '');
 
     return {
       success: true,
       fileName: finalFileName,
       savePath: fullPath,
-      downloadUrl: downloadUrl,
-      preview: preview,
-      fullContent: markdown
+      markdown: markdown,
+      preview: preview
     };
   } catch (error) {
     console.error('Conversion error:', error);
