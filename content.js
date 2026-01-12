@@ -5,19 +5,36 @@
 
 // 페이지 메타데이터 추출
 function extractPageData() {
-  // 제목 추출 시도
-  let title = document.title;
+  let title = '';
 
-  // 더 나은 제목 찾기
-  const h1 = document.querySelector('h1');
-  if (h1 && h1.textContent.trim()) {
-    title = h1.textContent.trim();
+  // 1. Confluence 특화 선택자 (우선순위 높음)
+  const confluenceTitle = document.querySelector('#title-text, .page-title');
+  if (confluenceTitle && confluenceTitle.textContent.trim()) {
+    title = confluenceTitle.textContent.trim();
   }
 
-  // Confluence 특화
-  const confluenceTitle = document.querySelector('#title-text, .page-title');
-  if (confluenceTitle) {
-    title = confluenceTitle.textContent.trim();
+  // 2. h1 태그에서 제목 찾기
+  if (!title) {
+    const h1 = document.querySelector('h1');
+    if (h1 && h1.textContent.trim()) {
+      title = h1.textContent.trim();
+    }
+  }
+
+  // 3. document.title 사용
+  if (!title) {
+    title = document.title;
+  }
+
+  // 4. 제목 정리 (불필요한 접미사 제거)
+  if (title) {
+    // " - Site Name", " | Site Name" 같은 패턴 제거
+    title = title.split('|')[0].split('-')[0].trim();
+  }
+
+  // 5. 여전히 비어있거나 너무 일반적인 경우
+  if (!title || title.toLowerCase() === 'wiki' || title.length < 2) {
+    title = 'page-' + new Date().getTime();
   }
 
   // 본문 콘텐츠 추출 - 여러 선택자 시도

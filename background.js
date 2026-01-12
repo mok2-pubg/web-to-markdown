@@ -81,11 +81,29 @@ async function fetchPageSimple(url) {
 
     const html = await response.text();
 
-    // 간단한 정규식으로 제목 추출
-    let title = 'untitled';
+    // 제목 추출 시도
+    let title = '';
+
+    // 1. <title> 태그에서 추출
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch) {
-      title = titleMatch[1].split('-')[0].split('|')[0].trim();
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].split('|')[0].split('-')[0].trim();
+    }
+
+    // 2. h1 태그에서 추출 시도
+    if (!title) {
+      const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      if (h1Match && h1Match[1]) {
+        title = h1Match[1].trim();
+      }
+    }
+
+    // 3. 여전히 비어있거나 너무 일반적인 경우
+    if (!title || title.toLowerCase() === 'wiki' || title.length < 2) {
+      // URL에서 파일명 추출 시도
+      const urlPath = new URL(url).pathname;
+      const urlParts = urlPath.split('/').filter(p => p);
+      title = urlParts.length > 0 ? urlParts[urlParts.length - 1] : 'page-' + Date.now();
     }
 
     // body 태그 내용 추출

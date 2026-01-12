@@ -17,19 +17,21 @@
     </div>
 
     <div class="section">
+      <label for="savePath">저장 폴더 (다운로드 폴더 기준):</label>
+      <input type="text" id="savePath" placeholder="예: .claude/web-docs/">
+      <small>다운로드 폴더 내 상대 경로. 절대 경로 입력 시 자동 변환됩니다.</small>
+    </div>
+
+    <div class="section">
       <label for="fileName">파일명 (선택):</label>
       <input type="text" id="fileName" placeholder="비워두면 페이지 제목 사용">
     </div>
 
     <div class="section">
-      <p style="margin: 0 0 8px 0; font-size: 13px; color: #172b4d;">
-        <strong>💡 저장 위치 안내</strong>
-      </p>
-      <small style="line-height: 1.5;">
-        변환 버튼을 누르면 <strong>저장 대화상자</strong>가 열립니다.<br>
-        원하는 위치를 선택하면 Chrome이 해당 경로를 기억합니다.<br>
-        (예: C:\Users\username\.claude\web-docs\ 등)
-      </small>
+      <label>
+        <input type="checkbox" id="manualSave">
+        저장 위치를 매번 직접 선택 (위 폴더 경로 무시)
+      </label>
     </div>
 
     <button id="convertBtn" class="btn-primary">Markdown으로 변환 및 저장</button>
