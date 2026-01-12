@@ -1,8 +1,8 @@
 // DOM 요소
 const confluenceUrlInput = document.getElementById('confluenceUrl');
-const savePathInput = document.getElementById('savePath');
+const subFolderInput = document.getElementById('subFolder');
 const fileNameInput = document.getElementById('fileName');
-const autoDownloadCheckbox = document.getElementById('autoDownload');
+const saveAsDialogCheckbox = document.getElementById('saveAsDialog');
 const getCurrentUrlBtn = document.getElementById('getCurrentUrl');
 const convertBtn = document.getElementById('convertBtn');
 const statusDiv = document.getElementById('status');
@@ -10,12 +10,12 @@ const progressDiv = document.getElementById('progress');
 const resultDiv = document.getElementById('result');
 
 // 저장된 설정 불러오기
-chrome.storage.sync.get(['savePath', 'autoDownload'], (result) => {
-  if (result.savePath) {
-    savePathInput.value = result.savePath;
+chrome.storage.sync.get(['subFolder', 'saveAsDialog'], (result) => {
+  if (result.subFolder) {
+    subFolderInput.value = result.subFolder;
   }
-  if (result.autoDownload !== undefined) {
-    autoDownloadCheckbox.checked = result.autoDownload;
+  if (result.saveAsDialog !== undefined) {
+    saveAsDialogCheckbox.checked = result.saveAsDialog;
   }
 });
 
@@ -35,9 +35,9 @@ getCurrentUrlBtn.addEventListener('click', async () => {
 // 변환 및 저장
 convertBtn.addEventListener('click', async () => {
   const url = confluenceUrlInput.value.trim();
-  const savePath = savePathInput.value.trim();
+  const subFolder = subFolderInput.value.trim();
   const fileName = fileNameInput.value.trim();
-  const autoDownload = autoDownloadCheckbox.checked;
+  const saveAsDialog = saveAsDialogCheckbox.checked;
 
   // 유효성 검사
   if (!url) {
@@ -45,13 +45,8 @@ convertBtn.addEventListener('click', async () => {
     return;
   }
 
-  if (!savePath) {
-    showStatus('저장 경로를 입력해주세요', 'error');
-    return;
-  }
-
   // 설정 저장
-  chrome.storage.sync.set({ savePath, autoDownload });
+  chrome.storage.sync.set({ subFolder, saveAsDialog });
 
   // UI 상태 업데이트
   convertBtn.disabled = true;
@@ -79,9 +74,7 @@ convertBtn.addEventListener('click', async () => {
           response = await chrome.runtime.sendMessage({
             action: 'convertFromContent',
             pageData: contentResponse.data,
-            savePath: savePath,
-            fileName: fileName,
-            autoDownload: autoDownload
+            fileName: fileName
           });
         } else {
           throw new Error('Content script 응답 없음');
@@ -93,9 +86,7 @@ convertBtn.addEventListener('click', async () => {
         response = await chrome.runtime.sendMessage({
           action: 'convertToMarkdown',
           url: url,
-          savePath: savePath,
-          fileName: fileName,
-          autoDownload: autoDownload
+          fileName: fileName
         });
       }
     } else {
@@ -104,31 +95,45 @@ convertBtn.addEventListener('click', async () => {
       response = await chrome.runtime.sendMessage({
         action: 'convertToMarkdown',
         url: url,
-        savePath: savePath,
-        fileName: fileName,
-        autoDownload: autoDownload
+        fileName: fileName
       });
     }
 
     if (response.success) {
       showStatus('변환 완료!', 'success');
-      resultDiv.textContent = `파일명: ${response.fileName}\n경로: ${response.savePath}\n\n미리보기:\n${response.preview}`;
+
+      // 다운로드 파일명 결정 (하위 폴더 포함)
+      let downloadFileName = response.fileName;
+      if (subFolder) {
+        // 슬래시 정규화
+        const normalizedFolder = subFolder.replace(/\\/g, '/').replace(/\/+$/, '');
+        downloadFileName = normalizedFolder + '/' + response.fileName;
+      }
+
+      // 결과 표시
+      const downloadPath = subFolder
+        ? `다운로드/${subFolder}${response.fileName}`
+        : `다운로드/${response.fileName}`;
+      resultDiv.textContent = `파일명: ${response.fileName}\n저장 위치: ${downloadPath}\n\n미리보기:\n${response.preview}`;
       resultDiv.classList.add('show');
 
       // 다운로드 처리
-      if (autoDownload && response.markdown) {
+      if (response.markdown) {
         showStatus('파일 다운로드 중...', 'info');
 
         // Blob 생성 및 다운로드
         const blob = new Blob([response.markdown], { type: 'text/markdown' });
         const downloadUrl = URL.createObjectURL(blob);
 
-        await downloadFile(downloadUrl, response.fileName);
+        await downloadFile(downloadUrl, downloadFileName, saveAsDialog);
 
         // Blob URL 해제
         URL.revokeObjectURL(downloadUrl);
 
-        showStatus('파일이 다운로드되었습니다!', 'success');
+        const savedMsg = saveAsDialog
+          ? '파일 저장 완료!'
+          : `파일이 다운로드되었습니다: ${downloadPath}`;
+        showStatus(savedMsg, 'success');
       }
     } else {
       showStatus('오류: ' + response.error, 'error');
@@ -142,12 +147,12 @@ convertBtn.addEventListener('click', async () => {
 });
 
 // 파일 다운로드
-async function downloadFile(url, fileName) {
+async function downloadFile(url, fileName, saveAs = false) {
   return new Promise((resolve, reject) => {
     chrome.downloads.download({
       url: url,
       filename: fileName,
-      saveAs: false
+      saveAs: saveAs
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));

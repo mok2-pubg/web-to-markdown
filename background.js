@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // content script에서 받은 데이터를 Markdown으로 변환
-async function handleContentScriptConversion({ pageData, savePath, fileName, autoDownload }) {
+async function handleContentScriptConversion({ pageData, fileName }) {
   try {
     // 1. HTML을 Markdown으로 변환
     const markdown = convertHtmlToMarkdownSimple(pageData.content, pageData.title);
@@ -23,18 +23,12 @@ async function handleContentScriptConversion({ pageData, savePath, fileName, aut
     // 2. 파일명 결정
     const finalFileName = fileName || sanitizeFileName(pageData.title) + '.md';
 
-    // 3. 전체 경로 생성
-    const fullPath = savePath.endsWith('/') || savePath.endsWith('\\')
-      ? savePath + finalFileName
-      : savePath + '/' + finalFileName;
-
-    // 4. 미리보기 생성 (처음 500자)
+    // 3. 미리보기 생성 (처음 500자)
     const preview = markdown.substring(0, 500) + (markdown.length > 500 ? '...' : '');
 
     return {
       success: true,
       fileName: finalFileName,
-      savePath: fullPath,
       markdown: markdown,
       preview: preview
     };
@@ -45,7 +39,7 @@ async function handleContentScriptConversion({ pageData, savePath, fileName, aut
 }
 
 // 외부 URL 페이지를 Markdown으로 변환
-async function handleConversion({ url, savePath, fileName, autoDownload }) {
+async function handleConversion({ url, fileName }) {
   try {
     // 1. 페이지 가져오기
     const pageData = await fetchPageSimple(url);
@@ -56,18 +50,12 @@ async function handleConversion({ url, savePath, fileName, autoDownload }) {
     // 3. 파일명 결정
     const finalFileName = fileName || sanitizeFileName(pageData.title) + '.md';
 
-    // 4. 전체 경로 생성
-    const fullPath = savePath.endsWith('/') || savePath.endsWith('\\')
-      ? savePath + finalFileName
-      : savePath + '/' + finalFileName;
-
-    // 5. 미리보기 생성 (처음 500자)
+    // 4. 미리보기 생성 (처음 500자)
     const preview = markdown.substring(0, 500) + (markdown.length > 500 ? '...' : '');
 
     return {
       success: true,
       fileName: finalFileName,
-      savePath: fullPath,
       markdown: markdown,
       preview: preview
     };
