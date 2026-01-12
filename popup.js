@@ -10,7 +10,16 @@ const progressDiv = document.getElementById('progress');
 const resultDiv = document.getElementById('result');
 const singleModeDiv = document.getElementById('singleMode');
 const batchModeDiv = document.getElementById('batchMode');
+const bookmarkModeDiv = document.getElementById('bookmarkMode');
+const bookmarkFolderSelect = document.getElementById('bookmarkFolder');
+const loadBookmarksBtn = document.getElementById('loadBookmarks');
+const bookmarkInfoDiv = document.getElementById('bookmarkInfo');
+const selectedFolderNameSpan = document.getElementById('selectedFolderName');
+const bookmarkCountSpan = document.getElementById('bookmarkCount');
 const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+// 북마크 URL 저장
+let bookmarkUrls = [];
 
 // 저장된 설정 불러오기
 chrome.storage.sync.get(['manualSave'], (result) => {
@@ -26,16 +35,94 @@ chrome.storage.sync.get(['manualSave'], (result) => {
 modeRadios.forEach(radio => {
   radio.addEventListener('change', (e) => {
     const mode = e.target.value;
+    singleModeDiv.style.display = 'none';
+    batchModeDiv.style.display = 'none';
+    bookmarkModeDiv.style.display = 'none';
+
     if (mode === 'single') {
       singleModeDiv.style.display = 'block';
-      batchModeDiv.style.display = 'none';
       convertBtn.textContent = 'Markdown으로 변환 및 저장';
-    } else {
-      singleModeDiv.style.display = 'none';
+    } else if (mode === 'batch') {
       batchModeDiv.style.display = 'block';
       convertBtn.textContent = '일괄 변환 및 저장';
+    } else if (mode === 'bookmark') {
+      bookmarkModeDiv.style.display = 'block';
+      convertBtn.textContent = '북마크 폴더 변환 및 저장';
     }
   });
+});
+
+// 북마크 폴더 불러오기
+loadBookmarksBtn.addEventListener('click', async () => {
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    bookmarkFolderSelect.innerHTML = '<option value="">폴더를 선택하세요</option>';
+
+    // 북마크 트리를 재귀적으로 탐색하여 폴더만 추출
+    function traverseBookmarks(nodes, depth = 0) {
+      nodes.forEach(node => {
+        if (node.children) {
+          // 폴더인 경우
+          const indent = '　'.repeat(depth); // 들여쓰기
+          const option = document.createElement('option');
+          option.value = node.id;
+          option.textContent = indent + (node.title || '(이름 없음)');
+          bookmarkFolderSelect.appendChild(option);
+
+          // 하위 폴더 탐색
+          traverseBookmarks(node.children, depth + 1);
+        }
+      });
+    }
+
+    traverseBookmarks(tree);
+    showStatus('북마크 폴더를 불러왔습니다', 'success');
+  } catch (error) {
+    showStatus('북마크를 불러오는데 실패했습니다: ' + error.message, 'error');
+  }
+});
+
+// 북마크 폴더 선택 시 URL 개수 표시
+bookmarkFolderSelect.addEventListener('change', async () => {
+  const folderId = bookmarkFolderSelect.value;
+
+  if (!folderId) {
+    bookmarkInfoDiv.style.display = 'none';
+    bookmarkUrls = [];
+    return;
+  }
+
+  try {
+    const folder = await chrome.bookmarks.getSubTree(folderId);
+    const urls = [];
+
+    // 선택된 폴더 내의 모든 URL 추출 (재귀적)
+    function extractUrls(nodes) {
+      nodes.forEach(node => {
+        if (node.url) {
+          // URL이 있는 북마크
+          urls.push(node.url);
+        }
+        if (node.children) {
+          // 하위 폴더가 있으면 재귀 탐색
+          extractUrls(node.children);
+        }
+      });
+    }
+
+    extractUrls(folder);
+    bookmarkUrls = urls;
+
+    // 폴더 이름과 URL 개수 표시
+    const folderName = folder[0].title || '(이름 없음)';
+    selectedFolderNameSpan.textContent = folderName;
+    bookmarkCountSpan.textContent = urls.length;
+    bookmarkInfoDiv.style.display = 'block';
+
+    showStatus(`${urls.length}개의 북마크를 찾았습니다`, 'success');
+  } catch (error) {
+    showStatus('북마크 정보를 가져오는데 실패했습니다: ' + error.message, 'error');
+  }
 });
 
 // 현재 탭 URL 가져오기
@@ -57,6 +144,8 @@ convertBtn.addEventListener('click', async () => {
 
   if (mode === 'batch') {
     await handleBatchConversion();
+  } else if (mode === 'bookmark') {
+    await handleBookmarkConversion();
   } else {
     await handleSingleConversion();
   }
@@ -250,6 +339,114 @@ async function handleBatchConversion() {
         const downloadUrl = URL.createObjectURL(blob);
 
         // 일괄 처리는 모두 자동으로 Downloads 폴더에 저장
+        await downloadFile(downloadUrl, response.fileName, false);
+
+        URL.revokeObjectURL(downloadUrl);
+        results.success++;
+      } else {
+        results.failed++;
+        results.errors.push(`${url}: ${response.error || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push(`${url}: ${error.message}`);
+    }
+
+    // 요청 간 짧은 딜레이 (서버 부하 방지)
+    if (i < urls.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  // 결과 표시
+  progressDiv.style.display = 'none';
+  convertBtn.disabled = false;
+
+  let resultMessage = `완료! 성공: ${results.success}, 실패: ${results.failed}`;
+  if (results.errors.length > 0) {
+    resultMessage += '\n\n실패한 URL:\n' + results.errors.join('\n');
+    showStatus(resultMessage, results.failed > 0 ? 'error' : 'success');
+  } else {
+    showStatus(resultMessage, 'success');
+  }
+
+  resultDiv.textContent = resultMessage;
+  resultDiv.classList.add('show');
+}
+
+// 북마크 폴더 변환
+async function handleBookmarkConversion() {
+  // 북마크 URL이 없으면 오류
+  if (bookmarkUrls.length === 0) {
+    showStatus('북마크 폴더를 선택하고 URL을 불러와주세요', 'error');
+    return;
+  }
+
+  const urls = bookmarkUrls;
+  // 북마크 폴더 변환은 항상 자동으로 Downloads 폴더에 저장
+  const manualSave = false;
+
+  // UI 상태 업데이트
+  convertBtn.disabled = true;
+  progressDiv.style.display = 'block';
+  resultDiv.classList.remove('show');
+
+  const results = {
+    total: urls.length,
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+
+  // 순차적으로 변환
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    showStatus(`처리 중... (${i + 1}/${urls.length}): ${url}`, 'info');
+
+    try {
+      // 현재 탭 확인
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      let response;
+
+      // 현재 탭의 URL과 일치하면 content script 사용 시도
+      if (tab && tab.url === url) {
+        try {
+          const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+            action: 'extractPageData'
+          });
+
+          if (contentResponse && contentResponse.success) {
+            response = await chrome.runtime.sendMessage({
+              action: 'convertFromContent',
+              pageData: contentResponse.data,
+              fileName: ''
+            });
+          } else {
+            throw new Error('Content script 응답 없음');
+          }
+        } catch (contentError) {
+          // Fallback to fetch
+          response = await chrome.runtime.sendMessage({
+            action: 'convertToMarkdown',
+            url: url,
+            fileName: ''
+          });
+        }
+      } else {
+        // 외부 URL은 background.js에서 fetch
+        response = await chrome.runtime.sendMessage({
+          action: 'convertToMarkdown',
+          url: url,
+          fileName: ''
+        });
+      }
+
+      if (response.success && response.markdown) {
+        // Blob 생성 및 다운로드
+        const blob = new Blob([response.markdown], { type: 'text/markdown' });
+        const downloadUrl = URL.createObjectURL(blob);
+
+        // 북마크 폴더 변환은 모두 자동으로 Downloads 폴더에 저장
         await downloadFile(downloadUrl, response.fileName, false);
 
         URL.revokeObjectURL(downloadUrl);

@@ -19,6 +19,10 @@
         <input type="radio" name="mode" value="batch">
         일괄 처리
       </label>
+      <label>
+        <input type="radio" name="mode" value="bookmark">
+        북마크 폴더
+      </label>
     </div>
 
     <div id="singleMode" class="mode-content">
@@ -45,6 +49,22 @@
       <div class="section">
         <label for="batchUrls">URL 목록 (한 줄에 하나씩):</label>
         <textarea id="batchUrls" rows="8" placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
+      </div>
+    </div>
+
+    <div id="bookmarkMode" class="mode-content" style="display: none;">
+      <div class="section">
+        <label for="bookmarkFolder">북마크 폴더 선택:</label>
+        <select id="bookmarkFolder">
+          <option value="">폴더를 선택하세요</option>
+        </select>
+        <button id="loadBookmarks" class="btn-secondary">북마크 폴더 불러오기</button>
+      </div>
+      <div class="section" id="bookmarkInfo" style="display: none;">
+        <div class="info-box">
+          <strong>선택된 폴더:</strong> <span id="selectedFolderName"></span><br>
+          <strong>URL 개수:</strong> <span id="bookmarkCount">0</span>개
+        </div>
       </div>
     </div>
 
