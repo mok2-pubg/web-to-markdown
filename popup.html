@@ -10,15 +10,35 @@
   <div class="container">
     <h1>Web to Markdown</h1>
 
-    <div class="section">
-      <label for="confluenceUrl">Web Page URL:</label>
-      <input type="text" id="confluenceUrl" placeholder="https://example.com/page">
-      <button id="getCurrentUrl" class="btn-secondary">현재 탭 URL 가져오기</button>
+    <div class="section mode-toggle">
+      <label>
+        <input type="radio" name="mode" value="single" checked>
+        단일 URL
+      </label>
+      <label>
+        <input type="radio" name="mode" value="batch">
+        일괄 처리
+      </label>
     </div>
 
-    <div class="section">
-      <label for="fileName">파일명 (선택):</label>
-      <input type="text" id="fileName" placeholder="비워두면 페이지 제목 사용">
+    <div id="singleMode" class="mode-content">
+      <div class="section">
+        <label for="confluenceUrl">Web Page URL:</label>
+        <input type="text" id="confluenceUrl" placeholder="https://example.com/page">
+        <button id="getCurrentUrl" class="btn-secondary">현재 탭 URL 가져오기</button>
+      </div>
+
+      <div class="section">
+        <label for="fileName">파일명 (선택):</label>
+        <input type="text" id="fileName" placeholder="비워두면 페이지 제목 사용">
+      </div>
+    </div>
+
+    <div id="batchMode" class="mode-content" style="display: none;">
+      <div class="section">
+        <label for="batchUrls">URL 목록 (한 줄에 하나씩):</label>
+        <textarea id="batchUrls" rows="8" placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
+      </div>
     </div>
 
     <div class="section">

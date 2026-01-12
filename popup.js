@@ -1,12 +1,16 @@
 // DOM 요소
 const confluenceUrlInput = document.getElementById('confluenceUrl');
 const fileNameInput = document.getElementById('fileName');
+const batchUrlsTextarea = document.getElementById('batchUrls');
 const manualSaveCheckbox = document.getElementById('manualSave');
 const getCurrentUrlBtn = document.getElementById('getCurrentUrl');
 const convertBtn = document.getElementById('convertBtn');
 const statusDiv = document.getElementById('status');
 const progressDiv = document.getElementById('progress');
 const resultDiv = document.getElementById('result');
+const singleModeDiv = document.getElementById('singleMode');
+const batchModeDiv = document.getElementById('batchMode');
+const modeRadios = document.querySelectorAll('input[name="mode"]');
 
 // 저장된 설정 불러오기
 chrome.storage.sync.get(['manualSave'], (result) => {
@@ -16,6 +20,22 @@ chrome.storage.sync.get(['manualSave'], (result) => {
     // 기본값: 수동 선택 활성화
     manualSaveCheckbox.checked = true;
   }
+});
+
+// 모드 토글
+modeRadios.forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const mode = e.target.value;
+    if (mode === 'single') {
+      singleModeDiv.style.display = 'block';
+      batchModeDiv.style.display = 'none';
+      convertBtn.textContent = 'Markdown으로 변환 및 저장';
+    } else {
+      singleModeDiv.style.display = 'none';
+      batchModeDiv.style.display = 'block';
+      convertBtn.textContent = '일괄 변환 및 저장';
+    }
+  });
 });
 
 // 현재 탭 URL 가져오기
@@ -33,6 +53,17 @@ getCurrentUrlBtn.addEventListener('click', async () => {
 
 // 변환 및 저장
 convertBtn.addEventListener('click', async () => {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+
+  if (mode === 'batch') {
+    await handleBatchConversion();
+  } else {
+    await handleSingleConversion();
+  }
+});
+
+// 단일 URL 변환
+async function handleSingleConversion() {
   const url = confluenceUrlInput.value.trim();
   const fileName = fileNameInput.value.trim();
   const manualSave = manualSaveCheckbox.checked;
@@ -133,7 +164,130 @@ convertBtn.addEventListener('click', async () => {
     convertBtn.disabled = false;
     progressDiv.style.display = 'none';
   }
-});
+}
+
+// 일괄 URL 변환
+async function handleBatchConversion() {
+  const batchText = batchUrlsTextarea.value.trim();
+  const manualSave = manualSaveCheckbox.checked;
+
+  // 유효성 검사
+  if (!batchText) {
+    showStatus('URL 목록을 입력해주세요', 'error');
+    return;
+  }
+
+  // URL 파싱 (줄바꿈으로 구분)
+  const urls = batchText
+    .split('\n')
+    .map(url => url.trim())
+    .filter(url => url && url.startsWith('http'));
+
+  if (urls.length === 0) {
+    showStatus('유효한 URL이 없습니다', 'error');
+    return;
+  }
+
+  // 설정 저장
+  chrome.storage.sync.set({ manualSave });
+
+  // UI 상태 업데이트
+  convertBtn.disabled = true;
+  progressDiv.style.display = 'block';
+  resultDiv.classList.remove('show');
+
+  const results = {
+    total: urls.length,
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+
+  // 순차적으로 변환
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    showStatus(`처리 중... (${i + 1}/${urls.length}): ${url}`, 'info');
+
+    try {
+      // 현재 탭 확인
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      let response;
+
+      // 현재 탭의 URL과 일치하면 content script 사용 시도
+      if (tab && tab.url === url) {
+        try {
+          const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+            action: 'extractPageData'
+          });
+
+          if (contentResponse && contentResponse.success) {
+            response = await chrome.runtime.sendMessage({
+              action: 'convertFromContent',
+              pageData: contentResponse.data,
+              fileName: ''
+            });
+          } else {
+            throw new Error('Content script 응답 없음');
+          }
+        } catch (contentError) {
+          // Fallback to fetch
+          response = await chrome.runtime.sendMessage({
+            action: 'convertToMarkdown',
+            url: url,
+            fileName: ''
+          });
+        }
+      } else {
+        // 외부 URL은 background.js에서 fetch
+        response = await chrome.runtime.sendMessage({
+          action: 'convertToMarkdown',
+          url: url,
+          fileName: ''
+        });
+      }
+
+      if (response.success && response.markdown) {
+        // Blob 생성 및 다운로드
+        const blob = new Blob([response.markdown], { type: 'text/markdown' });
+        const downloadUrl = URL.createObjectURL(blob);
+
+        // 첫 번째 파일만 저장 위치 물어보기 (manualSave가 true인 경우)
+        // 나머지는 자동으로 Downloads 폴더에 저장
+        const shouldPrompt = manualSave && i === 0;
+        await downloadFile(downloadUrl, response.fileName, shouldPrompt);
+
+        URL.revokeObjectURL(downloadUrl);
+        results.success++;
+      } else {
+        results.failed++;
+        results.errors.push(`${url}: ${response.error || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push(`${url}: ${error.message}`);
+    }
+
+    // 요청 간 짧은 딜레이 (서버 부하 방지)
+    if (i < urls.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  // 결과 표시
+  progressDiv.style.display = 'none';
+  convertBtn.disabled = false;
+
+  let resultMessage = `완료! 성공: ${results.success}, 실패: ${results.failed}`;
+  if (results.errors.length > 0) {
+    resultMessage += '\n\n실패한 URL:\n' + results.errors.join('\n');
+    showStatus(resultMessage, results.failed > 0 ? 'error' : 'success');
+  } else {
+    showStatus(resultMessage, 'success');
+  }
+
+  resultDiv.textContent = resultMessage;
+  resultDiv.classList.add('show');
+}
 
 // 파일 다운로드
 async function downloadFile(url, fileName, saveAs = false) {

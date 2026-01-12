@@ -53,9 +53,49 @@ input[type="text"]:focus {
   box-shadow: 0 0 0 1px #0052cc;
 }
 
-input[type="checkbox"] {
+input[type="checkbox"],
+input[type="radio"] {
   margin-right: 8px;
   cursor: pointer;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 20px;
+  padding: 12px;
+  background: #f4f5f7;
+  border-radius: 3px;
+}
+
+.mode-toggle label {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 500;
+  color: #172b4d;
+}
+
+textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #0052cc;
+  box-shadow: 0 0 0 1px #0052cc;
+}
+
+.mode-content {
+  transition: opacity 0.2s;
 }
 
 small {
