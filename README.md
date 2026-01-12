@@ -1,6 +1,18 @@
 # Web to Markdown Chrome Extension
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Chrome](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://github.com/mok2-pubg/web-to-markdown)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mok2-pubg/web-to-markdown/releases)
+
+> Convert any web page to Markdown format and save it locally for AI agent reference.
+
 모든 웹 페이지를 Markdown 형식으로 변환하고 로컬에 저장하는 크롬 확장프로그램입니다. AI 에이전트가 참조할 수 있는 문서를 쉽게 생성할 수 있습니다.
+
+[한국어](#한국어) | [English](#english)
+
+---
+
+## 한국어
 
 ## 주요 기능
 
@@ -260,5 +272,166 @@ MIT License
 버그 리포트나 기능 제안은 [GitHub Issues](https://github.com/mok2-pubg/web-to-markdown/issues)에서 환영합니다!
 
 ## 작성자
+
+Made with Claude Code
+
+---
+
+## English
+
+### Key Features
+
+- 🌐 **Universal Web Page Conversion**: Convert any URL to Markdown
+- 📦 **Batch Processing**: Convert multiple URLs at once
+- 🔖 **Bookmark Folder Conversion**: Convert entire Chrome bookmark folders
+- 📥 **Flexible Save Options**: Choose save location or auto-save to Downloads
+- 🎯 **Current Tab URL Import**: One-click URL import from active tab
+- 📝 **Smart Title Extraction**: Automatically uses page title as filename
+- 🔄 **Rich HTML Support**:
+  - Headings (H1-H6)
+  - Paragraphs, bold, italic
+  - Links and images
+  - Code blocks (inline & block)
+  - Lists (ordered/unordered)
+  - Tables
+  - Blockquotes
+
+### Quick Start
+
+1. **Generate Icons**:
+   - Open `icons/generate-icons.html` in your browser
+   - Click "Download All Icons"
+   - Save the downloaded PNG files to the `icons/` folder
+
+2. **Load Extension in Chrome**:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode" (top right)
+   - Click "Load unpacked"
+   - Select the `web-to-markdown` folder
+
+3. **Start Converting**:
+   - Click the extension icon in Chrome toolbar
+   - Choose your mode (Single URL, Batch, or Bookmark Folder)
+   - Convert and save!
+
+### Usage Modes
+
+#### Single URL Mode
+Perfect for converting individual pages with full control over filename and save location.
+
+#### Batch Processing Mode
+Paste multiple URLs (one per line) and convert them all at once. All files auto-save to Downloads folder.
+
+#### Bookmark Folder Mode
+1. Click "Load Bookmark Folders"
+2. Select a folder from dropdown
+3. See URL count preview
+4. Convert all bookmarks (including subfolders)
+
+### Supported Platforms
+
+| Platform | Support |
+|----------|---------|
+| **Confluence** | ✅ Cloud/Server, automatic title extraction |
+| **Notion** | ✅ Public pages |
+| **Medium, Blogs** | ✅ Most blog platforms |
+| **GitHub** | ✅ Wiki, README, documentation |
+| **Stack Overflow** | ✅ Q&A pages |
+| **Others** | ✅ Any page with HTML content |
+
+### AI Agent Integration
+
+Save converted markdown files directly to AI agent reference directories:
+
+```
+C:\Users\username\.claude\web-docs\
+C:\Users\username\Documents\agent-knowledge\
+~/Documents/ai-reference/
+```
+
+**Tip**: Enable "Choose save location" checkbox to select your AI agent's reference directory.
+
+### Technical Details
+
+- **Chrome Extension Manifest V3**
+- **Vanilla JavaScript** (zero dependencies)
+- **Content Script**: Direct DOM access for current tab
+- **Regex-based Conversion**: Service Worker compatible
+- **Chrome Storage API**: Settings persistence
+- **Chrome Downloads API**: File download management
+- **Chrome Bookmarks API**: Bookmark folder access
+
+### Project Structure
+
+```
+web-to-markdown/
+├── manifest.json           # Extension configuration (Manifest V3)
+├── popup.html             # Popup UI
+├── popup.css              # Popup styles
+├── popup.js               # Popup logic (Blob creation, downloads)
+├── background.js          # Service worker (fetch, conversion)
+├── content.js             # Content script (DOM extraction)
+├── icons/
+│   ├── icon.svg          # SVG source
+│   ├── generate-icons.html  # PNG generation tool
+│   ├── icon16.png        # 16x16 icon
+│   ├── icon48.png        # 48x48 icon
+│   └── icon128.png       # 128x128 icon
+└── README.md
+```
+
+### Known Limitations
+
+1. **Authentication Required**: You must be logged in to access protected pages
+2. **Permissions Required**: You need read access to the pages
+3. **Dynamic Content**: JavaScript-loaded content may not be captured
+4. **Attachments**: File attachments are included as links only
+5. **Complex Layouts**: Very complex CSS layouts may be simplified
+
+### Troubleshooting
+
+**"Failed to fetch page" error**:
+- Ensure you're logged in to the site
+- Verify you have read permissions
+- Check URL format (include http:// or https://)
+- Some sites may block requests due to CORS policies
+
+**Title showing as "WIKI.md" or "untitled.md"**:
+- For current tab: Use "Get Current Tab URL" button for better accuracy
+- Specify a custom filename
+- Ensure the page has a proper title tag
+
+**Icons not displaying**:
+- Generate PNG icons using `icons/generate-icons.html`
+- Ensure PNG files are in the `icons/` folder
+- Reload the extension
+
+### Development
+
+**Debugging**:
+1. **Popup**: Right-click popup → Inspect
+2. **Background Script**: `chrome://extensions/` → "Service Worker" → Inspect
+3. **Content Script**: F12 on page → Console tab
+
+**Testing**:
+```javascript
+// Test page data extraction
+chrome.tabs.sendMessage(tabId, {action: 'extractPageData'}, response => {
+  console.log(response);
+});
+
+// Test markdown conversion
+console.log(convertHtmlToMarkdownSimple(html, title));
+```
+
+### Contributing
+
+Contributions are welcome! Please feel free to submit bug reports or feature requests via [GitHub Issues](https://github.com/mok2-pubg/web-to-markdown/issues).
+
+### License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+### Credits
 
 Made with Claude Code
