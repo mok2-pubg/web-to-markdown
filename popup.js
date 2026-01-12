@@ -1,23 +1,11 @@
 // DOM 요소
 const confluenceUrlInput = document.getElementById('confluenceUrl');
-const subFolderInput = document.getElementById('subFolder');
 const fileNameInput = document.getElementById('fileName');
-const saveAsDialogCheckbox = document.getElementById('saveAsDialog');
 const getCurrentUrlBtn = document.getElementById('getCurrentUrl');
 const convertBtn = document.getElementById('convertBtn');
 const statusDiv = document.getElementById('status');
 const progressDiv = document.getElementById('progress');
 const resultDiv = document.getElementById('result');
-
-// 저장된 설정 불러오기
-chrome.storage.sync.get(['subFolder', 'saveAsDialog'], (result) => {
-  if (result.subFolder) {
-    subFolderInput.value = result.subFolder;
-  }
-  if (result.saveAsDialog !== undefined) {
-    saveAsDialogCheckbox.checked = result.saveAsDialog;
-  }
-});
 
 // 현재 탭 URL 가져오기
 getCurrentUrlBtn.addEventListener('click', async () => {
@@ -35,18 +23,13 @@ getCurrentUrlBtn.addEventListener('click', async () => {
 // 변환 및 저장
 convertBtn.addEventListener('click', async () => {
   const url = confluenceUrlInput.value.trim();
-  const subFolder = subFolderInput.value.trim();
   const fileName = fileNameInput.value.trim();
-  const saveAsDialog = saveAsDialogCheckbox.checked;
 
   // 유효성 검사
   if (!url) {
     showStatus('Web Page URL을 입력해주세요', 'error');
     return;
   }
-
-  // 설정 저장
-  chrome.storage.sync.set({ subFolder, saveAsDialog });
 
   // UI 상태 업데이트
   convertBtn.disabled = true;
@@ -102,38 +85,24 @@ convertBtn.addEventListener('click', async () => {
     if (response.success) {
       showStatus('변환 완료!', 'success');
 
-      // 다운로드 파일명 결정 (하위 폴더 포함)
-      let downloadFileName = response.fileName;
-      if (subFolder) {
-        // 슬래시 정규화
-        const normalizedFolder = subFolder.replace(/\\/g, '/').replace(/\/+$/, '');
-        downloadFileName = normalizedFolder + '/' + response.fileName;
-      }
-
       // 결과 표시
-      const downloadPath = subFolder
-        ? `다운로드/${subFolder}${response.fileName}`
-        : `다운로드/${response.fileName}`;
-      resultDiv.textContent = `파일명: ${response.fileName}\n저장 위치: ${downloadPath}\n\n미리보기:\n${response.preview}`;
+      resultDiv.textContent = `파일명: ${response.fileName}\n\n미리보기:\n${response.preview}`;
       resultDiv.classList.add('show');
 
       // 다운로드 처리
       if (response.markdown) {
-        showStatus('파일 다운로드 중...', 'info');
+        showStatus('저장 위치를 선택하세요...', 'info');
 
         // Blob 생성 및 다운로드
         const blob = new Blob([response.markdown], { type: 'text/markdown' });
         const downloadUrl = URL.createObjectURL(blob);
 
-        await downloadFile(downloadUrl, downloadFileName, saveAsDialog);
+        await downloadFile(downloadUrl, response.fileName, true);
 
         // Blob URL 해제
         URL.revokeObjectURL(downloadUrl);
 
-        const savedMsg = saveAsDialog
-          ? '파일 저장 완료!'
-          : `파일이 다운로드되었습니다: ${downloadPath}`;
-        showStatus(savedMsg, 'success');
+        showStatus('파일이 저장되었습니다!', 'success');
       }
     } else {
       showStatus('오류: ' + response.error, 'error');
