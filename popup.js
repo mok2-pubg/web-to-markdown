@@ -1,6 +1,5 @@
 // DOM 요소
 const confluenceUrlInput = document.getElementById('confluenceUrl');
-const savePathInput = document.getElementById('savePath');
 const fileNameInput = document.getElementById('fileName');
 const manualSaveCheckbox = document.getElementById('manualSave');
 const getCurrentUrlBtn = document.getElementById('getCurrentUrl');
@@ -10,12 +9,12 @@ const progressDiv = document.getElementById('progress');
 const resultDiv = document.getElementById('result');
 
 // 저장된 설정 불러오기
-chrome.storage.sync.get(['savePath', 'manualSave'], (result) => {
-  if (result.savePath) {
-    savePathInput.value = result.savePath;
-  }
+chrome.storage.sync.get(['manualSave'], (result) => {
   if (result.manualSave !== undefined) {
     manualSaveCheckbox.checked = result.manualSave;
+  } else {
+    // 기본값: 수동 선택 활성화
+    manualSaveCheckbox.checked = true;
   }
 });
 
@@ -35,7 +34,6 @@ getCurrentUrlBtn.addEventListener('click', async () => {
 // 변환 및 저장
 convertBtn.addEventListener('click', async () => {
   const url = confluenceUrlInput.value.trim();
-  let savePath = savePathInput.value.trim();
   const fileName = fileNameInput.value.trim();
   const manualSave = manualSaveCheckbox.checked;
 
@@ -46,20 +44,7 @@ convertBtn.addEventListener('click', async () => {
   }
 
   // 설정 저장
-  chrome.storage.sync.set({ savePath, manualSave });
-
-  // 절대 경로를 상대 경로로 변환
-  if (savePath && savePath.includes(':')) {
-    // Windows 절대 경로 (C:\Users\...)
-    const parts = savePath.split(/[\\\/]/);
-    const downloadsIndex = parts.findIndex(p => p.toLowerCase() === 'downloads');
-    if (downloadsIndex !== -1 && downloadsIndex < parts.length - 1) {
-      savePath = parts.slice(downloadsIndex + 1).join('/');
-      savePathInput.value = savePath;
-      showStatus(`경로를 상대 경로로 변환했습니다: ${savePath}`, 'info');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-  }
+  chrome.storage.sync.set({ manualSave });
 
   // UI 상태 업데이트
   convertBtn.disabled = true;
@@ -117,22 +102,8 @@ convertBtn.addEventListener('click', async () => {
 
       // 다운로드 처리
       if (response.markdown) {
-        // 다운로드 파일명 결정
-        let downloadFileName = response.fileName;
-
-        // 수동 저장이 아니고 저장 경로가 있으면 경로 포함
-        if (!manualSave && savePath) {
-          // 슬래시 정규화
-          const normalizedPath = savePath.replace(/\\/g, '/').replace(/\/+$/, '');
-          downloadFileName = normalizedPath + '/' + response.fileName;
-        }
-
         // 결과 표시
-        const displayPath = manualSave
-          ? '사용자가 선택한 위치'
-          : savePath
-            ? `다운로드/${savePath}${response.fileName}`
-            : `다운로드/${response.fileName}`;
+        const displayPath = manualSave ? '사용자가 선택한 위치' : `다운로드/${response.fileName}`;
         resultDiv.textContent = `파일명: ${response.fileName}\n저장 위치: ${displayPath}\n\n미리보기:\n${response.preview}`;
         resultDiv.classList.add('show');
 
@@ -146,7 +117,7 @@ convertBtn.addEventListener('click', async () => {
         const blob = new Blob([response.markdown], { type: 'text/markdown' });
         const downloadUrl = URL.createObjectURL(blob);
 
-        await downloadFile(downloadUrl, downloadFileName, manualSave);
+        await downloadFile(downloadUrl, response.fileName, manualSave);
 
         // Blob URL 해제
         URL.revokeObjectURL(downloadUrl);
