@@ -169,7 +169,8 @@ async function handleSingleConversion() {
 // 일괄 URL 변환
 async function handleBatchConversion() {
   const batchText = batchUrlsTextarea.value.trim();
-  const manualSave = manualSaveCheckbox.checked;
+  // 일괄 처리는 항상 자동으로 Downloads 폴더에 저장
+  const manualSave = false;
 
   // 유효성 검사
   if (!batchText) {
@@ -187,9 +188,6 @@ async function handleBatchConversion() {
     showStatus('유효한 URL이 없습니다', 'error');
     return;
   }
-
-  // 설정 저장
-  chrome.storage.sync.set({ manualSave });
 
   // UI 상태 업데이트
   convertBtn.disabled = true;
@@ -251,10 +249,8 @@ async function handleBatchConversion() {
         const blob = new Blob([response.markdown], { type: 'text/markdown' });
         const downloadUrl = URL.createObjectURL(blob);
 
-        // 첫 번째 파일만 저장 위치 물어보기 (manualSave가 true인 경우)
-        // 나머지는 자동으로 Downloads 폴더에 저장
-        const shouldPrompt = manualSave && i === 0;
-        await downloadFile(downloadUrl, response.fileName, shouldPrompt);
+        // 일괄 처리는 모두 자동으로 Downloads 폴더에 저장
+        await downloadFile(downloadUrl, response.fileName, false);
 
         URL.revokeObjectURL(downloadUrl);
         results.success++;

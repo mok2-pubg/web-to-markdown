@@ -32,6 +32,13 @@
         <label for="fileName">파일명 (선택):</label>
         <input type="text" id="fileName" placeholder="비워두면 페이지 제목 사용">
       </div>
+
+      <div class="section">
+        <label>
+          <input type="checkbox" id="manualSave" checked>
+          저장 위치를 직접 선택 (미선택시 download)
+        </label>
+      </div>
     </div>
 
     <div id="batchMode" class="mode-content" style="display: none;">
@@ -39,13 +46,6 @@
         <label for="batchUrls">URL 목록 (한 줄에 하나씩):</label>
         <textarea id="batchUrls" rows="8" placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
       </div>
-    </div>
-
-    <div class="section">
-      <label>
-        <input type="checkbox" id="manualSave" checked>
-        저장 위치를 직접 선택 (미선택시 download)
-      </label>
     </div>
 
     <button id="convertBtn" class="btn-primary">Markdown으로 변환 및 저장</button>
