@@ -38,35 +38,84 @@ function extractPageData() {
   }
 
   // 본문 콘텐츠 추출 - 여러 선택자 시도
-  let contentElement =
-    document.querySelector('#main-content') ||  // Confluence, GitHub
-    document.querySelector('.wiki-content') ||   // Confluence
-    document.querySelector('.page-content') ||   // 일반적인 페이지
-    document.querySelector('main') ||            // HTML5 main
-    document.querySelector('article') ||         // HTML5 article
-    document.querySelector('[role="main"]') ||   // ARIA main
-    document.querySelector('.content') ||        // 일반적인 클래스
-    document.body;                               // 최후의 수단
+  let contentElement = null;
+
+  // Confluence 특화 본문 추출 (우선순위)
+  if (window.location.hostname.includes('atlassian.net') ||
+      document.querySelector('.wiki-content') ||
+      document.querySelector('#main-content.wiki-content')) {
+
+    // Confluence 본문 영역만 정확히 선택
+    contentElement =
+      document.querySelector('#main-content .contentLayout2') ||  // Confluence 새 레이아웃
+      document.querySelector('.wiki-content .contentLayout2') ||   // Confluence 본문 레이아웃
+      document.querySelector('#main-content') ||                   // Confluence 메인
+      document.querySelector('.wiki-content');                     // Confluence 위키
+  }
+
+  // 일반 웹사이트 본문 추출
+  if (!contentElement) {
+    contentElement =
+      document.querySelector('.page-content') ||   // 일반적인 페이지
+      document.querySelector('main') ||            // HTML5 main
+      document.querySelector('article') ||         // HTML5 article
+      document.querySelector('[role="main"]') ||   // ARIA main
+      document.querySelector('.content') ||        // 일반적인 클래스
+      document.body;                               // 최후의 수단
+  }
 
   // 불필요한 요소 제거 (복사본에서)
   const clone = contentElement.cloneNode(true);
 
-  // 제거할 요소들
+  // 제거할 요소들 - Confluence 및 일반 웹사이트
   const selectorsToRemove = [
+    // 기본 제거 대상
     'script',
     'style',
     'noscript',
     'iframe',
+
+    // Confluence 특화 제거 대상
+    '.ia-fixed-sidebar',           // Confluence 사이드바
+    '.ia-splitter',                // Confluence 분할선
+    '#navigation',                 // Confluence 네비게이션
+    '.space-navigation',           // Confluence 스페이스 네비게이션
+    '.page-navigation',            // 페이지 네비게이션
+    '.aui-header',                 // Atlassian 헤더
+    '.aui-sidebar',                // Atlassian 사이드바
+    '.aui-breadcrumbs',            // 브레드크럼
+    '.breadcrumbs',                // 브레드크럼
+    '.page-metadata',              // 페이지 메타데이터
+    '.content-navigation',         // 콘텐츠 네비게이션
+    '.page-metadata-banner',       // 메타데이터 배너
+    '.footer-body',                // 푸터
+    '.related-content',            // 관련 콘텐츠
+    '#comments-section',           // 댓글 섹션
+    '#likes-section',              // 좋아요 섹션
+    '#likes-and-labels-container', // 좋아요/라벨 컨테이너
+    '.page-metadata-modification-info', // 수정 정보
+    '[data-test-id="page-metadata-labels"]', // 라벨
+    '.quick-comment-container',    // 빠른 댓글
+    '.confluence-information-macro', // Confluence 정보 매크로 (일부)
+
+    // 일반 웹사이트 제거 대상
     '.navigation',
     '.navbar',
     '.nav',
+    'nav',
     '.header',
+    'header',
     '.footer',
+    'footer',
     '.sidebar',
+    'aside',
     '.advertisement',
     '.ad',
     '[class*="comment"]',
-    '[class*="social"]'
+    '[class*="social"]',
+    '[class*="share"]',
+    '[class*="related"]',
+    '[class*="recommend"]'
   ];
 
   selectorsToRemove.forEach(selector => {

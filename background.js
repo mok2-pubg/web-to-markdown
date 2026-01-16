@@ -106,9 +106,55 @@ async function fetchPageSimple(url) {
       title = urlParts.length > 0 ? urlParts[urlParts.length - 1] : 'page-' + Date.now();
     }
 
-    // body 태그 내용 추출
-    const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-    const content = bodyMatch ? bodyMatch[1] : html;
+    // 본문 내용 추출 (Confluence 특화)
+    let content = '';
+
+    // Confluence 페이지인지 확인
+    const isConfluence = url.includes('atlassian.net') ||
+                         html.includes('class="wiki-content"') ||
+                         html.includes('id="main-content"');
+
+    if (isConfluence) {
+      // Confluence 본문 영역만 추출 시도
+      // 1. contentLayout2 영역 (Confluence 새 레이아웃)
+      let contentMatch = html.match(/<div[^>]*class="[^"]*contentLayout2[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+
+      // 2. wiki-content 영역
+      if (!contentMatch) {
+        contentMatch = html.match(/<div[^>]*class="[^"]*wiki-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+      }
+
+      // 3. main-content 영역
+      if (!contentMatch) {
+        contentMatch = html.match(/<div[^>]*id="main-content"[^>]*>([\s\S]*?)<\/div>/i);
+      }
+
+      content = contentMatch ? contentMatch[1] : html;
+
+      // Confluence 특화 불필요한 영역 제거 (regex)
+      const confluenceRemovePatterns = [
+        // 사이드바
+        /<div[^>]*class="[^"]*ia-fixed-sidebar[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+        /<div[^>]*id="navigation"[^>]*>[\s\S]*?<\/div>/gi,
+        // 브레드크럼
+        /<ol[^>]*class="[^"]*aui-breadcrumbs[^"]*"[^>]*>[\s\S]*?<\/ol>/gi,
+        // 메타데이터
+        /<div[^>]*class="[^"]*page-metadata[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+        // 푸터/관련 콘텐츠
+        /<div[^>]*class="[^"]*footer-body[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+        /<div[^>]*class="[^"]*related-content[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+        // 댓글
+        /<section[^>]*id="comments-section"[^>]*>[\s\S]*?<\/section>/gi,
+      ];
+
+      confluenceRemovePatterns.forEach(pattern => {
+        content = content.replace(pattern, '');
+      });
+    } else {
+      // 일반 웹사이트: body 태그 내용 추출
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      content = bodyMatch ? bodyMatch[1] : html;
+    }
 
     return {
       title: title,
@@ -128,6 +174,18 @@ function convertHtmlToMarkdownSimple(html, title) {
   // script, style 태그 제거
   html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+  // 일반적인 네비게이션/UI 요소 제거 (추가 정리)
+  const removePatterns = [
+    /<nav\b[^>]*>[\s\S]*?<\/nav>/gi,          // nav 태그
+    /<header\b[^>]*>[\s\S]*?<\/header>/gi,    // header 태그
+    /<footer\b[^>]*>[\s\S]*?<\/footer>/gi,    // footer 태그
+    /<aside\b[^>]*>[\s\S]*?<\/aside>/gi,      // aside 태그
+  ];
+
+  removePatterns.forEach(pattern => {
+    html = html.replace(pattern, '');
+  });
 
   // 기본 변환
   let content = html
