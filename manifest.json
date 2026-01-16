@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Web to Markdown",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Convert any web page to Markdown and save it locally for AI agent reference",
   "permissions": [
     "activeTab",

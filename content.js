@@ -38,31 +38,16 @@ function extractPageData() {
   }
 
   // 본문 콘텐츠 추출 - 여러 선택자 시도
-  let contentElement = null;
-
-  // Confluence 특화 본문 추출 (우선순위)
-  if (window.location.hostname.includes('atlassian.net') ||
-      document.querySelector('.wiki-content') ||
-      document.querySelector('#main-content.wiki-content')) {
-
-    // Confluence 본문 영역만 정확히 선택
-    contentElement =
-      document.querySelector('#main-content .contentLayout2') ||  // Confluence 새 레이아웃
-      document.querySelector('.wiki-content .contentLayout2') ||   // Confluence 본문 레이아웃
-      document.querySelector('#main-content') ||                   // Confluence 메인
-      document.querySelector('.wiki-content');                     // Confluence 위키
-  }
-
-  // 일반 웹사이트 본문 추출
-  if (!contentElement) {
-    contentElement =
-      document.querySelector('.page-content') ||   // 일반적인 페이지
-      document.querySelector('main') ||            // HTML5 main
-      document.querySelector('article') ||         // HTML5 article
-      document.querySelector('[role="main"]') ||   // ARIA main
-      document.querySelector('.content') ||        // 일반적인 클래스
-      document.body;                               // 최후의 수단
-  }
+  // 전략: 큰 영역을 가져온 후 불필요한 것만 제거 (너무 좁게 선택하면 본문을 놓칠 수 있음)
+  let contentElement =
+    document.querySelector('#main-content') ||  // Confluence, GitHub
+    document.querySelector('.wiki-content') ||   // Confluence
+    document.querySelector('.page-content') ||   // 일반적인 페이지
+    document.querySelector('main') ||            // HTML5 main
+    document.querySelector('article') ||         // HTML5 article
+    document.querySelector('[role="main"]') ||   // ARIA main
+    document.querySelector('.content') ||        // 일반적인 클래스
+    document.body;                               // 최후의 수단
 
   // 불필요한 요소 제거 (복사본에서)
   const clone = contentElement.cloneNode(true);
