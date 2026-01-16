@@ -23,6 +23,10 @@
         <input type="radio" name="mode" value="bookmark">
         북마크 폴더
       </label>
+      <label>
+        <input type="radio" name="mode" value="crawl">
+        하위 페이지
+      </label>
     </div>
 
     <div id="singleMode" class="mode-content">
@@ -64,6 +68,34 @@
         <div class="info-box">
           <strong>선택된 폴더:</strong> <span id="selectedFolderName"></span><br>
           <strong>URL 개수:</strong> <span id="bookmarkCount">0</span>개
+        </div>
+      </div>
+    </div>
+
+    <div id="crawlMode" class="mode-content" style="display: none;">
+      <div class="section">
+        <label for="crawlStartUrl">시작 페이지 URL:</label>
+        <input type="text" id="crawlStartUrl" placeholder="https://example.com/page">
+        <button id="getCrawlUrl" class="btn-secondary">현재 탭 URL 가져오기</button>
+      </div>
+
+      <div class="section">
+        <label for="crawlDepth">크롤링 깊이 (1-5):</label>
+        <input type="number" id="crawlDepth" min="1" max="5" value="2" style="width: 100px;">
+        <small>깊이 1 = 현재 페이지의 직접 링크만, 깊이 2 = 2단계까지...</small>
+      </div>
+
+      <div class="section">
+        <label>
+          <input type="checkbox" id="sameDomainOnly" checked>
+          같은 도메인만 크롤링 (권장)
+        </label>
+      </div>
+
+      <div class="section" id="crawlPreview" style="display: none;">
+        <div class="info-box">
+          <strong>발견된 페이지:</strong> <span id="discoveredCount">0</span>개<br>
+          <small>변환 버튼을 클릭하면 모든 페이지가 변환됩니다</small>
         </div>
       </div>
     </div>

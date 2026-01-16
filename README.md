@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://github.com/mok2-pubg/web-to-markdown)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mok2-pubg/web-to-markdown/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/mok2-pubg/web-to-markdown/releases)
 
 > Convert any web page to Markdown format and save it locally for AI agent reference.
 
@@ -19,6 +19,7 @@
 - 🌐 **모든 웹 페이지 변환**: URL만 입력하면 Markdown으로 변환
 - 📦 **일괄 처리 지원**: 여러 URL을 한 번에 입력하여 일괄 변환 및 다운로드
 - 🔖 **북마크 폴더 변환**: Chrome 북마크 폴더 전체를 한 번에 변환
+- 🕷️ **하위 페이지 크롤링**: 현재 페이지의 모든 하위 링크를 자동으로 찾아서 재귀적으로 변환 (최대 깊이 설정 가능)
 - 📥 **유연한 저장 방식**: 저장 위치를 직접 선택하거나 자동으로 다운로드 폴더에 저장
 - 🎯 **현재 탭 URL 자동 가져오기**: 클릭 한 번으로 현재 페이지 URL 입력
 - 📝 **스마트 제목 추출**: 페이지 제목을 자동으로 파일명으로 사용
@@ -110,6 +111,38 @@
 - URL 간 500ms 딜레이가 자동으로 적용되어 서버 부하를 방지합니다
 - 일부 URL이 실패해도 나머지는 계속 처리됩니다
 - 읽기 자료, 프로젝트 참고 문서 등을 폴더별로 정리해두면 편리합니다
+
+### 하위 페이지 크롤링 사용법
+
+1. Chrome 툴바에서 확장프로그램 아이콘을 클릭합니다
+2. **"하위 페이지"** 모드 선택
+3. **시작 페이지 URL** 입력:
+   - 직접 URL 입력, 또는
+   - "현재 탭 URL 가져오기" 버튼 클릭
+4. **크롤링 깊이 설정** (1-5):
+   - 깊이 1: 시작 페이지의 직접 링크만
+   - 깊이 2: 2단계까지 (링크의 링크)
+   - 깊이 3+: 3단계 이상 (깊을수록 더 많은 페이지 발견)
+5. **같은 도메인만 크롤링** (권장):
+   - ✅ 체크: 시작 페이지와 같은 도메인만 크롤링
+   - ⬜ 해제: 외부 링크도 포함 (주의: 너무 많은 페이지가 발견될 수 있음)
+6. "하위 페이지 크롤링 시작" 버튼 클릭
+7. 크롤링 진행 중 발견된 페이지 수가 실시간으로 표시됩니다
+8. 모든 발견된 페이지가 순차적으로 변환되어 Downloads 폴더에 저장됩니다
+9. 완료 후 성공/실패 개수와 오류 내역이 표시됩니다
+
+**하위 페이지 크롤링 팁**:
+- **위키/문서 사이트에 최적화**: Confluence, Notion, GitHub Wiki 등에 적합
+- 시작 페이지를 문서 목차 페이지로 설정하면 효과적
+- 최대 50개 페이지까지 자동 제한 (무한 크롤링 방지)
+- 현재 탭이 시작 페이지일 때 가장 정확하게 동작
+- 같은 도메인만 크롤링 옵션을 사용하면 관련 페이지만 수집
+- Confluence 스페이스 전체, GitHub 프로젝트 문서 전체를 한 번에 다운로드 가능
+
+**주의사항**:
+- 크롤링은 현재 탭에서만 링크를 추출할 수 있습니다
+- 다른 페이지로 이동하지 말고 현재 탭을 유지하세요
+- 크롤링 중 브라우저를 닫지 마세요
 
 ### AI 에이전트 연동
 

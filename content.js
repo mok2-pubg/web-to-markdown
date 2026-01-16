@@ -80,12 +80,60 @@ function extractPageData() {
   };
 }
 
+// 페이지에서 모든 링크 추출
+function extractLinks(sameDomainOnly = true) {
+  const currentUrl = new URL(window.location.href);
+  const links = new Set();
+
+  // 모든 <a> 태그 찾기
+  document.querySelectorAll('a[href]').forEach(anchor => {
+    try {
+      const href = anchor.getAttribute('href');
+      if (!href) return;
+
+      // 절대 URL로 변환
+      const absoluteUrl = new URL(href, window.location.href);
+
+      // 같은 도메인만 필터링 (옵션)
+      if (sameDomainOnly && absoluteUrl.hostname !== currentUrl.hostname) {
+        return;
+      }
+
+      // 특정 프로토콜만 허용
+      if (absoluteUrl.protocol !== 'http:' && absoluteUrl.protocol !== 'https:') {
+        return;
+      }
+
+      // 앵커(#) 제거
+      absoluteUrl.hash = '';
+
+      // URL 추가
+      const cleanUrl = absoluteUrl.href;
+      if (cleanUrl !== window.location.href) {  // 현재 페이지 제외
+        links.add(cleanUrl);
+      }
+    } catch (error) {
+      // 잘못된 URL은 무시
+    }
+  });
+
+  return Array.from(links);
+}
+
 // 메시지 리스너
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extractPageData') {
     try {
       const pageData = extractPageData();
       sendResponse({ success: true, data: pageData });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+  } else if (request.action === 'extractLinks') {
+    try {
+      const sameDomainOnly = request.sameDomainOnly !== undefined ? request.sameDomainOnly : true;
+      const links = extractLinks(sameDomainOnly);
+      sendResponse({ success: true, links: links, count: links.length });
     } catch (error) {
       sendResponse({ success: false, error: error.message });
     }
